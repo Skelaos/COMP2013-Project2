@@ -48,6 +48,7 @@ export interface CheckoutContainerProps {
 
 export interface FormComponentProps {
   clothesArticle: ClothingProduct;
+  responseMessage: string;
   handleOnSubmit: (e: SubmitEvent<HTMLFormElement>) => void;
   handleOnChange: (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
@@ -58,8 +59,9 @@ export default function ThriftHappensApp() {
   const [products, setProducts] = useState<ClothingProduct[]>([]);
   const [itemsQuantity, setItemsQuantity] = useState<ItemsQuantity[]>([]);
   const [checkoutItems, setCheckoutItems] = useState<CheckoutItem[]>([]);
+  const [responseMessage, setResponseMessage] = useState<string>("");
   const [clothesArticle, setClothesArticle] = useState<ClothingProduct>({
-    id: 0,
+    id: -1,
     name: "",
     image: "",
     fit: "men",
@@ -75,7 +77,9 @@ export default function ThriftHappensApp() {
   async function getProductsFromDatabase() {
     try {
       const { data } = await axios.get("http://localhost:3000/data");
-      setProducts(data);
+      setProducts(
+        data.sort((a: ClothingProduct, b: ClothingProduct) => b.id - a.id),
+      );
       setItemsQuantity(
         data.map((product: ClothingProduct) => ({
           id: product.id,
@@ -92,7 +96,9 @@ export default function ThriftHappensApp() {
     async function getProductsFromDatabase() {
       try {
         const { data } = await axios.get("http://localhost:3000/data");
-        setProducts(data);
+        setProducts(
+          data.sort((a: ClothingProduct, b: ClothingProduct) => b.id - a.id),
+        );
         setItemsQuantity(
           data.map((product: ClothingProduct) => ({
             id: product.id,
@@ -213,9 +219,35 @@ export default function ThriftHappensApp() {
     }));
   }
 
-  function handleOnSubmit(e: SubmitEvent<HTMLFormElement>) {
+  async function handleOnSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    return;
+    if (clothesArticle.id === -1) {
+      // If the input on the form is a brand new article, use the POST route to create a new clothing article
+      try {
+        await axios
+          .post("http://localhost:3000/data", {
+            ...clothesArticle,
+            id: parseInt((Math.random() * 10000 + 50).toFixed(0)),
+          })
+          .then((response) => setResponseMessage(response.data.message));
+        await getProductsFromDatabase();
+        setClothesArticle({
+          id: -1,
+          name: "",
+          image: "",
+          fit: "men",
+          category: "shirt",
+          size: "M",
+          color: "",
+          description: "",
+          price: 0,
+          quantity: 0,
+          itemQuantity: 0,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+    }
   }
 
   return (
@@ -236,6 +268,7 @@ export default function ThriftHappensApp() {
         />
         <FormComponent
           clothesArticle={clothesArticle}
+          responseMessage={responseMessage}
           handleOnSubmit={handleOnSubmit}
           handleOnChange={handleOnChange}
         />
