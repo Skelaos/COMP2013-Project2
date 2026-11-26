@@ -78,11 +78,39 @@ server.post("/data", async (request, response) => {
   });
   try {
     await newArticle.save();
+    response.status(200).send({
+      message: `New item with id ${id} added successfully`,
+    });
+  } catch (error) {
+    console.log(error);
+    response.status(500).send(error);
+  }
+});
+
+// DELETE Route to Delete One Clothes Article by Id
+server.delete("/data/:id", async (request, response) => {
+  // Because param converts the id to a string, we reconvert it to a number to abide by the model schema
+  const id = Number(request.params.id);
+  try {
+    await ClothesItem.findOneAndDelete({ id });
     response
       .status(200)
-      .send({
-        message: `The new item with id ${id} has been added successfully`,
-      });
+      .send({ message: `Item with id ${id} deleted successfully` });
+  } catch (error) {
+    console.log(error);
+    response.status(500).send(error);
+  }
+});
+
+// PATCH Route to Edit One Clothes Article by Id
+server.patch("/data/:id", async (request, response) => {
+  const id = Number(request.params.id);
+  const clothesArticle = request.body;
+  try {
+    await ClothesItem.findOneAndUpdate({ id }, { ...clothesArticle });
+    response
+      .status(200)
+      .send({ message: `Item with id ${id} edited successfully` });
   } catch (error) {
     console.log(error);
     response.status(500).send(error);
